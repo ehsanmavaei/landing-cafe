@@ -12,7 +12,8 @@ import {
   getFrameSrc,
   MAX_CANVAS_DPR,
   progressToFrameIndex,
-  storyBelowFrame,
+  visibleFrameBottom,
+  type ContainedFrameRect,
 } from "@/lib/frames";
 import { StoryOverlay } from "@/components/StoryOverlay";
 
@@ -109,18 +110,23 @@ export function HeroCanvas({
 
     const bg = config.colors.bg;
 
-    const updateStoryAnchor = (rectBottom: number | null) => {
-      const { fit } = activeSetRef.current;
-      if (storyBelowFrame(fit) && rectBottom != null) {
-        setFrameBottomPx(Math.round(rectBottom));
-      } else {
+    const updateStoryAnchor = (
+      rect: ContainedFrameRect | null,
+      canvasH: number
+    ) => {
+      if (!rect) {
         setFrameBottomPx(undefined);
+        return;
       }
+      setFrameBottomPx(
+        Math.round(visibleFrameBottom(rect, canvasH))
+      );
     };
 
     const drawFrame = (logicalIndex: number) => {
       const count = frameCountRef.current;
-      const { fit, zoom } = activeSetRef.current;
+      const { fit, zoom, focusX, focusY, offsetY } = activeSetRef.current;
+      const layout = { zoom, focusX, focusY, offsetY };
       const bitmap = getBitmapForFrame(
         logicalIndex,
         bitmapsRef.current,
@@ -135,8 +141,8 @@ export function HeroCanvas({
       if (w <= 0 || h <= 0) return;
 
       try {
-        const rect = drawFrameWithFit(ctx, bitmap, w, h, fit, bg, zoom);
-        updateStoryAnchor(rect ? rect.y + rect.h : null);
+        const rect = drawFrameWithFit(ctx, bitmap, w, h, fit, bg, layout);
+        updateStoryAnchor(rect, h);
       } catch (err) {
         console.error("Canvas draw failed for frame", logicalIndex, err);
         ctx.fillStyle = bg;
@@ -169,11 +175,15 @@ export function HeroCanvas({
 
       if (!loggedInitRef.current) {
         loggedInitRef.current = true;
-        const { fit, zoom, folder } = activeSetRef.current;
+        const { fit, zoom, focusX, focusY, offsetY, folder } =
+          activeSetRef.current;
         console.info("[Hero canvas init]", {
           frameFolder: folder,
           fit,
           zoom,
+          focusX,
+          focusY,
+          offsetY,
           layoutCssPx: { w, h },
           canvasPixels: { w: canvas.width, h: canvas.height },
           dpr,
@@ -332,7 +342,6 @@ export function HeroCanvas({
         <StoryOverlay
           steps={config.storySteps}
           progress={progress}
-          fit={fit}
           frameBottomPx={frameBottomPx}
         />
         {!reducedMotion && (

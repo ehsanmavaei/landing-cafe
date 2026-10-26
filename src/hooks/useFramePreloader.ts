@@ -60,7 +60,7 @@ function fillLogicalFrameMap(
 }
 
 function strategyKeyFrom(strategy: ResolvedFrameStrategy): string {
-  return `${strategy.set.folder}:${strategy.set.fit}:${strategy.set.zoom}:${isPortraitViewport()}`;
+  return `${strategy.set.folder}:${strategy.set.fit}:${strategy.set.zoom}:${strategy.set.focusX}:${strategy.set.focusY}:${strategy.set.offsetY}:${isPortraitViewport()}`;
 }
 
 function shouldLoadEverySecondFrame(): boolean {
@@ -81,6 +81,9 @@ const idleStrategy: FramePreloadState = {
     aspectRatio: 1,
     fit: "cover",
     zoom: 1,
+    focusX: 0.5,
+    focusY: 0.5,
+    offsetY: 0,
   },
   strategyKey: "",
 };
@@ -212,6 +215,9 @@ export function useFramePreloader(
         folder: set.folder,
         fit: set.fit,
         zoom: set.zoom,
+        focusX: set.focusX,
+        focusY: set.focusY,
+        offsetY: set.offsetY,
         frameCount,
         bitmapEntries: full.size,
         sparseLoadCount: partial.size,

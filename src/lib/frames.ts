@@ -3,10 +3,19 @@ import type { FrameSetConfig } from "@/lib/frameSet";
 
 export const MAX_CANVAS_DPR = 1.5;
 export const FRAME_ZOOM_MIN = 0.8;
-export const FRAME_ZOOM_MAX = 1.6;
+export const FRAME_ZOOM_MAX = 2;
+
+export type FrameLayout = Pick<
+  FrameSetConfig,
+  "zoom" | "focusX" | "focusY" | "offsetY"
+>;
 
 export function clampFrameZoom(zoom: number): number {
   return Math.min(FRAME_ZOOM_MAX, Math.max(FRAME_ZOOM_MIN, zoom));
+}
+
+export function clampFocus(value: number): number {
+  return Math.min(1, Math.max(0, value));
 }
 
 export function formatFrameIndex(index: number): string {
@@ -106,19 +115,51 @@ export type ContainedFrameRect = {
   h: number;
 };
 
-export function computeContainedFrameRect(
+export function computeFrameDrawRect(
   image: CanvasImageSource,
   width: number,
   height: number,
-  zoom: number
+  fit: FrameFit,
+  layout: FrameLayout
 ): ContainedFrameRect | null {
   const { iw, ih } = getImageSize(image);
   if (!iw || !ih) return null;
 
-  const scale = Math.min(width / iw, height / ih) * clampFrameZoom(zoom);
+  const zoom = clampFrameZoom(layout.zoom);
+  const focusX = clampFocus(layout.focusX);
+  const focusY = clampFocus(layout.focusY);
+  const offsetPx = layout.offsetY * height;
+
+  const baseScale =
+    fit === "cover"
+      ? Math.max(width / iw, height / ih)
+      : Math.min(width / iw, height / ih);
+
+  const scale = baseScale * zoom;
   const w = iw * scale;
   const h = ih * scale;
-  return { x: (width - w) / 2, y: (height - h) / 2, w, h };
+  const x = focusX * width - focusX * iw * scale;
+  const y = focusY * height - focusY * ih * scale + offsetPx;
+
+  return { x, y, w, h };
+}
+
+/** Visible bottom edge of the drawn frame inside the canvas (for story placement) */
+export function visibleFrameBottom(
+  rect: ContainedFrameRect,
+  canvasHeight: number
+): number {
+  const top = Math.max(0, rect.y);
+  const bottom = rect.y + rect.h;
+  return Math.min(canvasHeight, Math.max(top, bottom));
+}
+
+export function drawImageInRect(
+  ctx: CanvasRenderingContext2D,
+  image: CanvasImageSource,
+  rect: ContainedFrameRect
+): void {
+  ctx.drawImage(image, rect.x, rect.y, rect.w, rect.h);
 }
 
 export function drawCoverImage(
@@ -126,17 +167,16 @@ export function drawCoverImage(
   image: CanvasImageSource,
   width: number,
   height: number,
-  scaleMultiplier = 1
-): void {
-  const { iw, ih } = getImageSize(image);
-  if (!iw || !ih) return;
-
-  const scale = Math.max(width / iw, height / ih) * scaleMultiplier;
-  const sw = iw * scale;
-  const sh = ih * scale;
-  const sx = (width - sw) / 2;
-  const sy = (height - sh) / 2;
-  ctx.drawImage(image, sx, sy, sw, sh);
+  layout: FrameLayout,
+  scaleExtra = 1
+): ContainedFrameRect | null {
+  const rect = computeFrameDrawRect(image, width, height, "cover", {
+    ...layout,
+    zoom: clampFrameZoom(layout.zoom * scaleExtra),
+  });
+  if (!rect) return null;
+  drawImageInRect(ctx, image, rect);
+  return rect;
 }
 
 export function drawContainImage(
@@ -144,11 +184,11 @@ export function drawContainImage(
   image: CanvasImageSource,
   width: number,
   height: number,
-  zoom = 1
+  layout: FrameLayout
 ): ContainedFrameRect | null {
-  const rect = computeContainedFrameRect(image, width, height, zoom);
+  const rect = computeFrameDrawRect(image, width, height, "contain", layout);
   if (!rect) return null;
-  ctx.drawImage(image, rect.x, rect.y, rect.w, rect.h);
+  drawImageInRect(ctx, image, rect);
   return rect;
 }
 
@@ -158,17 +198,17 @@ export function drawContainBlur(
   width: number,
   height: number,
   backgroundColor: string,
-  zoom = 1
+  layout: FrameLayout
 ): ContainedFrameRect | null {
   ctx.fillStyle = backgroundColor;
   ctx.fillRect(0, 0, width, height);
 
   ctx.save();
   ctx.filter = "blur(56px) brightness(0.32) saturate(1.1)";
-  drawCoverImage(ctx, image, width, height, 1.35);
+  drawCoverImage(ctx, image, width, height, layout, 1.35);
   ctx.restore();
 
-  return drawContainImage(ctx, image, width, height, zoom);
+  return drawContainImage(ctx, image, width, height, layout);
 }
 
 export function drawFrameWithFit(
@@ -178,7 +218,7 @@ export function drawFrameWithFit(
   height: number,
   fit: FrameFit,
   backgroundColor: string,
-  zoom = 1
+  layout: FrameLayout
 ): ContainedFrameRect | null {
   ctx.clearRect(0, 0, width, height);
 
@@ -186,13 +226,12 @@ export function drawFrameWithFit(
     case "contain":
       ctx.fillStyle = backgroundColor;
       ctx.fillRect(0, 0, width, height);
-      return drawContainImage(ctx, image, width, height, zoom);
+      return drawContainImage(ctx, image, width, height, layout);
     case "contain-blur":
-      return drawContainBlur(ctx, image, width, height, backgroundColor, zoom);
+      return drawContainBlur(ctx, image, width, height, backgroundColor, layout);
     case "cover":
     default:
-      drawCoverImage(ctx, image, width, height);
-      return null;
+      return drawCoverImage(ctx, image, width, height, layout);
   }
 }
 

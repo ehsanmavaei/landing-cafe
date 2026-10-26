@@ -1,14 +1,11 @@
 "use client";
 
 import type { StoryStep } from "@/config/cafe";
-import type { FrameFit } from "@/config/cafe";
-import { storyBelowFrame } from "@/lib/frames";
 
 type StoryOverlayProps = {
   steps: StoryStep[];
   progress: number;
-  fit: FrameFit;
-  /** Bottom edge of the centered frame (px from hero top); positions copy below the cup */
+  /** Bottom edge of visible frame (px from hero top); keeps copy off the cup */
   frameBottomPx?: number;
 };
 
@@ -31,18 +28,17 @@ function stepOpacity(step: StoryStep, progress: number): number {
 export function StoryOverlay({
   steps,
   progress,
-  fit,
   frameBottomPx,
 }: StoryOverlayProps) {
-  const belowFrame = storyBelowFrame(fit) && frameBottomPx != null;
-  const textTop = belowFrame ? frameBottomPx + 20 : undefined;
+  const belowFrame = frameBottomPx != null;
+  const textTop = belowFrame ? frameBottomPx + 24 : undefined;
 
   return (
     <div
       className="pointer-events-none absolute inset-x-0 z-[2] px-6 text-center"
       style={
         belowFrame
-          ? { top: textTop, bottom: "auto" }
+          ? { top: textTop, bottom: "auto", maxHeight: `calc(100% - ${textTop}px)` }
           : { bottom: "4rem", top: "auto" }
       }
       aria-hidden

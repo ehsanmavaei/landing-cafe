@@ -57,8 +57,14 @@ export type CafeConfig = {
       /** width / height (e.g. 9/16 portrait) */
       aspectRatio: number;
       fit: FrameFit;
-      /** Foreground contain scale tweak (0.8–1.6) */
+      /** Scales the frame around its center on top of fit (0.8–2.0) */
       zoom: number;
+      /** Horizontal focal point on the frame (0–1) */
+      focusX: number;
+      /** Vertical focal point on the frame (0–1) */
+      focusY: number;
+      /** Vertical shift as a fraction of viewport height (e.g. 0.05 = 5% down) */
+      offsetY: number;
     };
     desktop: {
       folder: string;
@@ -67,6 +73,9 @@ export type CafeConfig = {
       aspectRatio: number;
       fit: FrameFit;
       zoom: number;
+      focusX: number;
+      focusY: number;
+      offsetY: number;
     };
   };
   storySteps: StoryStep[];
@@ -94,7 +103,7 @@ export type CafeConfig = {
 };
 
 export const cafeConfig: CafeConfig = {
-  name: "Bean & Bloom Café",
+  name: "Dope",
   tagline: "Freshly roasted. Slowly poured.",
   colors: {
     bg: "#2b1a12",
@@ -117,7 +126,10 @@ export const cafeConfig: CafeConfig = {
       frameCount: 240,
       aspectRatio: 9 / 16,
       fit: "contain-blur",
-      zoom: 1,
+      zoom: 2.4,
+      focusX: 0.5,
+      focusY: 0.5,
+      offsetY: 0,
     },
     desktop: {
       folder: "/frames-desktop",
@@ -125,6 +137,9 @@ export const cafeConfig: CafeConfig = {
       aspectRatio: 16 / 9,
       fit: "cover",
       zoom: 1,
+      focusX: 0.5,
+      focusY: 0.5,
+      offsetY: 0,
     },
   },
   storySteps: [
@@ -213,7 +228,7 @@ export const cafeConfig: CafeConfig = {
     },
   ],
   about:
-    "Bean & Bloom is a small neighborhood roastery tucked on a leafy side street, where green beans arrive weekly and leave as something worth savoring. We roast in small batches on a vintage drum roaster, cup every lot, and serve only what we’d drink ourselves. Pull up a chair, breathe in the crema, and stay awhile.",
+    "Dope is a small neighborhood roastery tucked on a leafy side street, where green beans arrive weekly and leave as something worth savoring. We roast in small batches on a vintage drum roaster, cup every lot, and serve only what we’d drink ourselves. Pull up a chair, breathe in the crema, and stay awhile.",
   openingHours: [{ label: "Monday – Sunday", hours: "8:00 – 22:00" }],
   address: {
     street: "42 Orchard Lane",
@@ -224,7 +239,7 @@ export const cafeConfig: CafeConfig = {
   },
   phone: "+1 (415) 555-0198",
   whatsapp: "+14155550198",
-  instagram: "https://instagram.com/beanandbloomcafe",
+  instagram: "https://instagram.com/dopecafe",
   googleMapsEmbedUrl:
     "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.019234567890!2d-122.4194!3d37.7749!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzfCsDQ2JzI5LjYiTiAxMjLCsDI1JzA5LjgiVw!5e0!3m2!1sen!2sus!4v1700000000000!5m2!1sen!2sus",
   gallery: [
@@ -266,10 +281,10 @@ export const cafeConfig: CafeConfig = {
     },
   ],
   seo: {
-    title: "Bean & Bloom Café | Freshly Roasted Coffee in Brookfield",
+    title: "Dope | Freshly Roasted Coffee in Brookfield",
     description:
-      "Neighborhood roastery and café serving small-batch espresso, cold brew, and pastries. Open daily 8am–10pm on Orchard Lane.",
+      "Dope — neighborhood roastery and café serving small-batch espresso, cold brew, and pastries. Open daily 8am–10pm on Orchard Lane.",
     ogImage: "/og.jpg",
-    siteUrl: "https://bean-and-bloom.vercel.app",
+    siteUrl: "https://dope.vercel.app",
   },
 };

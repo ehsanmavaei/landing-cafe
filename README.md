@@ -1,4 +1,4 @@
-# Bean & Bloom Café — scroll-sequence landing page
+# Dope — scroll-sequence landing page
 
 A config-driven Next.js (App Router) landing page with a pinned canvas hero that scrubs through a WebP image sequence on scroll. Built for **Vercel** deploy out of the box.
 
